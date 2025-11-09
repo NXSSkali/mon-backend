@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion / Inscription</title>
+  <link rel="stylesheet" href="style.css">
+  
+</head>
+<body>
+  <div class="menu">
+    <ul>
+      <li class="a">
+        <a id="openModal" class="bouton" href="#"><strong>CONNEXION</strong></a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Fenêtre modale -->
+  <div class="modal" id="authModal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+
+      <div class="modal-header">
+        <div class="tab-btn active" data-tab="login">Connexion</div>
+        <div class="tab-btn" data-tab="register">Inscription</div>
+      </div>
+
+      <form id="login" class="active" fetch()="/login" method="POST">
+        <label>Email</label>
+    
+        <input type="email" name="email" required>
+        <label>Mot de passe</label>
+        <input type="password" name="password" required>
+        <button type="submit">Se connecter</button>
+    
+      </form>
+      <p class="message" id="loginMessage"></p>
+
+
+      <form id="register" fetch()="/register" method="POST">
+        <label>Nom d’utilisateur</label>
+        <input type="text" name="username" required>
+        <label>Email</label>
+        <input type="email" name="email" required>
+        <label>Mot de passe</label>
+        <input type="password" name="password" required>
+        <button type="submit">Créer un compte</button>
+      </form>
+      <p class="message" id="registerMessage"></p>
+
+    </div>
+  </div>
+
+  <script>
+  const modal = document.getElementById('authModal');
+  const openBtn = document.getElementById('openModal');
+  const closeBtn = document.getElementById('closeModal');
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const forms = document.querySelectorAll('form');
+
+  // --- Gestion ouverture/fermeture modale ---
+  openBtn.onclick = (e) => {
+    e.preventDefault();
+    modal.style.display = 'flex';
+  };
+  closeBtn.onclick = () => modal.style.display = 'none';
+  window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; }
+
+  // --- Switch connexion / inscription ---
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.tab;
+      forms.forEach(f => f.classList.remove('active'));
+      document.getElementById(target).classList.add('active');
+    });
+  });
+
+  // --- Envoi des formulaires avec fetch() ---
+  forms.forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault(); // empêche le rechargement
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      const route = form.id === 'login' ? '/login' : '/register';
+
+      try {
+        const response = await fetch(`http://localhost:4000${route}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+
+        const msgEl = document.getElementById(`${form.id}Message`);
+msgEl.textContent = ''; // reset
+
+if (!response.ok) {
+  msgEl.textContent = result.error || 'Une erreur est survenue.';
+  msgEl.classList.remove('success');
+  return;
+}
+
+if (form.id === 'login') {
+  msgEl.textContent = 'Connexion réussie ✅';
+  msgEl.classList.add('success');
+  localStorage.setItem('authToken', result.token);
+  setTimeout(() => modal.style.display = 'none', 1000);
+} else {
+  msgEl.textContent = 'Compte créé avec succès 🎉';
+  msgEl.classList.add('success');
+}
+
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.error || 'Une erreur est survenue.');
+          return;
+        }
+
+        if (form.id === 'login') {
+          alert('Connexion réussie ✅');
+          console.log('Token reçu :', result.token);
+          // Enregistre le token pour les requêtes futures
+          localStorage.setItem('authToken', result.token);
+          modal.style.display = 'none';
+        } else {
+          alert('Compte créé avec succès 🎉');
+        }
+
+      } catch (err) {
+        console.error('Erreur réseau', err);
+        alert('Impossible de contacter le serveur.');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
